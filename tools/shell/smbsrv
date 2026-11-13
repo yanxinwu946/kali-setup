@@ -1,0 +1,21 @@
+#!/bin/bash
+SHARE_PATH=$(pwd)
+
+get_ip() {
+  local interfaces=("tun0" "eth0" "eth1" "wlan0" "ens33")
+  for iface in "${interfaces[@]}"; do
+    ip=$(ip addr show "$iface" 2>/dev/null | grep "inet " | awk '{print $2}' | cut -d/ -f1)
+    [ -n "$ip" ] && echo "$ip" && return 0
+  done
+  return 1
+}
+
+ip=$(get_ip) || { read -p "Enter IP: " ip; [[ $ip =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "invalid IP"; exit 1; }; }
+
+if [ "${1:-}" = "-p" ]; then
+  echo "net use x: \\\\$ip\\share /user:test test"
+  sudo impacket-smbserver share "$SHARE_PATH" -username test -password test -smb2support
+else
+  echo "net use n: \\\\$ip\\share /user:test test"
+  sudo impacket-smbserver share "$SHARE_PATH" -smb2support
+fi

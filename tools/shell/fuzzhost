@@ -1,0 +1,22 @@
+#!/bin/bash
+
+if [ -z "$1" ] || [ -z "$2" ]; then
+    echo "Usage: $0 <TARGET_IP> <TARGET_DOMAIN>"
+    exit 1
+fi
+
+TARGET_IP=$1
+TARGET_DOMAIN=$2
+COMMAND="ffuf -c -ic -u http://$TARGET_IP/ -H \"Host: FUZZ.$TARGET_DOMAIN\" -w /usr/share/seclists/Discovery/DNS/subdomains-top1million-110000.txt -ac"
+
+echo -e "[*] Command to be executed:"
+echo -e "\033[1;32m$COMMAND\033[0m\n"
+
+read -p "[?] Press Enter to confirm, or any other key to abort: " CONFIRM
+
+if [ "$CONFIRM" = "" ]; then
+    eval $COMMAND
+else
+    echo "[!] Aborted."
+    exit 0
+fi

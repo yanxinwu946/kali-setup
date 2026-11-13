@@ -1,0 +1,34 @@
+#!/bin/sh
+# Finger User Enum 
+# Usage: ./finger_enum.sh <target-ip> <user-dict> [output.txt]
+
+TARGET=$1
+DICT=$2
+OUT=$3
+
+[ -z "$TARGET" ] || [ -z "$DICT" ] && {
+    echo "Usage: $0 <target-ip> <user-dict> [output.txt]"
+    exit 1
+}
+[ -s "$DICT" ] || { echo "Dict file '$DICT' not found/empty"; exit 1; }
+
+# 可选输出文件
+if [ -n "$OUT" ]; then
+    >"$OUT" 2>/dev/null || { echo "Cannot write to '$OUT'"; exit 1; }
+fi
+
+echo "[+] Finger enum on $TARGET  (dict: $DICT, timeout 0.2s)"
+
+while IFS= read -r user; do
+    [ -z "$user" ] && continue
+    # 0.2 秒超时
+    out=$(timeout 0.2 finger "$user@$TARGET" 2>/dev/null)
+    case "$out" in
+        *Directory:*)
+            printf "\033[32m[+] Valid: %s\033[0m\n" "$user"
+            [ -n "$OUT" ] && printf "%s\n%s\n\n" "$user:" "$out" >> "$OUT"
+            ;;
+    esac
+done < "$DICT"
+
+echo "[+] Done."

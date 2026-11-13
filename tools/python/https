@@ -1,0 +1,65 @@
+#!/usr/bin/env python3
+# https_server.py
+
+from http.server import HTTPServer, SimpleHTTPRequestHandler
+import ssl
+import os
+import subprocess
+import argparse
+import tempfile
+
+DEFAULT_HOST = "0.0.0.0"
+DEFAULT_PORT = 443
+
+class Handler(SimpleHTTPRequestHandler):
+    def log_message(self, format, *args):
+        print(f"{self.address_string()} - - [{self.log_date_time_string()}] {format % args}")
+
+def generate_cert(cert_path, key_path):
+    if not (os.path.exists(cert_path) and os.path.exists(key_path)):
+        print("Generating self-signed cert...")
+        subprocess.run([
+            "openssl", "req", "-x509", "-newkey", "rsa:2048", "-nodes",
+            "-keyout", key_path, "-out", cert_path, "-days", "1",
+            "-subj", "/CN=localhost", "-addext", "subjectAltName=DNS:localhost,IP:127.0.0.1"
+        ], check=True, capture_output=True)
+
+def run_server(host, port, directory):
+    temp_dir = tempfile.gettempdir()
+    cert = os.path.join(temp_dir, "cert.pem")
+    key = os.path.join(temp_dir, "key.pem")
+    
+    generate_cert(cert, key)
+    
+    context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    context.load_cert_chain(cert, key)
+    
+    class DirHandler(Handler):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, directory=directory, **kwargs)
+    
+    server = HTTPServer((host, port), DirHandler)
+    server.socket = context.wrap_socket(server.socket, server_side=True)
+    
+    print(f"HTTPS server: https://{host}:{port} sharing {os.path.abspath(directory)}")
+    print("Ctrl+C to stop")
+    
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        print("Server stopped")
+    except Exception as e:
+        print(f"Error: {e}")
+        if port < 1024:
+            print("Run with sudo for ports < 1024.")
+
+def main():
+    parser = argparse.ArgumentParser(description="HTTPS server for directory sharing.")
+    parser.add_argument("-H", "--host", default=DEFAULT_HOST, help="Host to bind")
+    parser.add_argument("-p", "--port", type=int, default=DEFAULT_PORT, help="Port to listen")
+    parser.add_argument("-d", "--dir", default=os.getcwd(), help="Directory to share")
+    args = parser.parse_args()
+    run_server(args.host, args.port, args.dir)
+
+if __name__ == "__main__":
+    main()

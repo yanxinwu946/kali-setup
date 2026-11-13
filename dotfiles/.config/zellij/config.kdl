@@ -1,0 +1,6 @@
+// Zellij 配置文件（由 kali-setup 托管）
+// 仅保留相对默认值的覆盖项，其余使用内置默认值，避免携带版本相关的大段注释。
+// 如需生成完整默认配置: zellij setup --dump-config > ~/.config/zellij/config.kdl
+
+theme "catppuccin-mocha"
+show_startup_tips false

@@ -1,0 +1,66 @@
+#!/bin/bash
+set -euo pipefail
+
+usage() {
+    echo "Usage: $0 [-t <token>] <repo_url_or_path>"
+    echo "Options: -t  GitHub Personal Access Token (or set GITHUB_TOKEN env)"
+    exit 1
+}
+
+TOKEN="${GITHUB_TOKEN:-}"
+while getopts "t:" opt; do
+    case $opt in
+        t) TOKEN="$OPTARG" ;;
+        *) usage ;;
+    esac
+done
+shift $((OPTIND-1))
+
+INPUT="${1:-}"
+[ -z "$INPUT" ] && usage
+[ -z "$TOKEN" ] && { echo "Error: GITHUB_TOKEN is not set."; exit 1; }
+
+if [[ "$INPUT" =~ github\.com/([^/]+)/([^/.]+)(\.git)?$ ]]; then
+    OWNER="${BASH_REMATCH[1]}"
+    REPO="${BASH_REMATCH[2]}"
+elif [[ "$INPUT" =~ ^([^/]+)/([^/]+)$ ]]; then
+    OWNER="${BASH_REMATCH[1]}"
+    REPO="${BASH_REMATCH[2]}"
+else
+    echo "Error: Invalid repository format."
+    exit 1
+fi
+
+API_BASE="https://api.github.com/repos/$OWNER/$REPO"
+CURL_CMD=(curl -s -H "Authorization: token $TOKEN" -H "Accept: application/vnd.github.v3+json")
+
+call_api() {
+    local method="$1" url="$2"; shift 2
+    local response
+    response=$( "${CURL_CMD[@]}" -X "$method" "$url" "$@" -w "|%{http_code}" )
+    local body="${response%|*}"
+    local code="${response##*|}"
+    
+    if [[ "$code" != "200" && "$code" != "201" ]]; then
+        echo "API Error ($code): $(echo "$body" | jq -r '.message' 2>/dev/null || echo "$body")" >&2
+        return 1
+    fi
+    echo "$body"
+}
+
+echo "Target: $OWNER/$REPO"
+
+# 1. Get Tree SHA
+BODY=$(call_api GET "$API_BASE/branches/main")
+TREE_SHA=$(echo "$BODY" | jq -r '.commit.commit.tree.sha')
+
+# 2. Create Orphan Commit
+COMMIT_DATA=$(printf '{"message":"init","tree":"%s","parents":[]}' "$TREE_SHA")
+BODY=$(call_api POST "$API_BASE/git/commits" -d "$COMMIT_DATA")
+NEW_SHA=$(echo "$BODY" | jq -r '.sha')
+
+# 3. Force Update Ref
+UPDATE_DATA=$(printf '{"sha":"%s","force":true}' "$NEW_SHA")
+call_api PATCH "$API_BASE/git/refs/heads/main" -d "$UPDATE_DATA" > /dev/null
+
+echo "Success: History has been cleared for $OWNER/$REPO."

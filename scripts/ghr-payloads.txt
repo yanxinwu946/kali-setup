@@ -1,0 +1,31 @@
+# 后渗透载荷清单（ghr download）
+# 格式: spec|dest|type|member
+#   type   = raw | gz | zip | tar.gz
+#   member = 压缩包内文件名（raw/gz 留空）
+# dest 相对于仓库根目录；已存在时默认跳过，--force 重新下载
+
+# chisel
+jpillora/chisel/linux_amd64.gz|payloads/tunnel/chisel/chisel_linux|gz|
+jpillora/chisel/windows_amd64.zip|payloads/tunnel/chisel/chisel.exe|zip|chisel.exe
+
+# gost
+go-gost/gost/linux_amd64.tar.gz|payloads/tunnel/gost/gost_linux|tar.gz|gost
+go-gost/gost/windows_amd64.zip|payloads/tunnel/gost/gost.exe|zip|gost.exe
+
+# ligolo-ng（资产名含版本号，升级时改下面三行的版本）
+nicocha30/ligolo-ng/agent_0.9.2_linux_amd64.tar.gz|payloads/tunnel/ligolo/agent_linux|tar.gz|agent
+nicocha30/ligolo-ng/agent_0.9.2_windows_amd64.zip|payloads/tunnel/ligolo/agent.exe|zip|agent.exe
+nicocha30/ligolo-ng/proxy_0.9.2_linux_amd64.tar.gz|payloads/tunnel/ligolo/proxy_linux|tar.gz|proxy
+
+# Stowaway
+ph4ntonn/Stowaway/linux_x64_admin|payloads/tunnel/stowaway/stowaway_admin|raw|
+ph4ntonn/Stowaway/linux_x64_agent|payloads/tunnel/stowaway/stowaway_agent_linux|raw|
+ph4ntonn/Stowaway/windows_x64_admin.exe|payloads/tunnel/stowaway/stowaway_admin.exe|raw|
+ph4ntonn/Stowaway/windows_x64_agent.exe|payloads/tunnel/stowaway/stowaway_agent.exe|raw|
+
+# socat
+3ndG4me/socat/socatx64.bin|payloads/tunnel/socat/socat_linux|raw|
+3ndG4me/socat/socatx64.exe|payloads/tunnel/socat/socat.exe|raw|
+
+# Windows 提权
+peass-ng/PEASS-ng/winPEASx64.exe|payloads/windows/privesc/winpeas.exe|raw|

@@ -1,0 +1,38 @@
+#!/usr/bin/env python3
+import sys, argparse, gc
+from impacket.ntlm import compute_nthash
+
+def nth(pw):
+    h = compute_nthash(pw)
+    if isinstance(h, bytes):
+        try: return h.decode()
+        except: return h.hex()
+    return str(h)
+
+def readf(path):
+    with open(path, "r", encoding="utf-8", errors="ignore") as f:
+        for l in f:
+            p = l.rstrip("\r\n")
+            if p: yield p
+
+p = argparse.ArgumentParser(add_help=False)
+p.add_argument("passwords", nargs="*",)
+p.add_argument("-f","--file")
+args = p.parse_args()
+
+lst = []
+if args.passwords: lst.extend(args.passwords)
+if args.file:
+    try: lst.extend(list(readf(args.file)))
+    except: pass
+
+if not lst:
+    sys.exit(0)
+
+out = []
+for pw in lst:
+    out.append(nth(pw))
+    pw=None
+    gc.collect()
+
+sys.stdout.write("\n".join(out) + ("\n" if out else ""))

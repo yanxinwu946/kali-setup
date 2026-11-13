@@ -1,0 +1,84 @@
+#!/bin/bash
+
+# wgetfiles.sh: Generate or execute wget command for recursive file download
+# Usage: wgetfiles.sh [-d <directory>] [<url>]
+#        -d <directory>: Specify download directory (default: /tmp/rowbot)
+#        <url>: URL to download (optional, prompts if not provided)
+#        Without arguments: Copies wget command to clipboard
+
+# Default download directory
+DEFAULT_DIR="/tmp/rowbot"
+
+# Function to check if xclip is installed
+check_xclip() {
+    if ! command -v xclip >/dev/null 2>&1; then
+        echo "Error: xclip is not installed. Please install it (e.g., 'sudo apt install xclip')."
+        exit 1
+    fi
+}
+
+# Function to check if directory is writable
+check_dir() {
+    local dir="$1"
+    if [ ! -d "$dir" ]; then
+        mkdir -p "$dir" 2>/dev/null || {
+            echo "Error: Cannot create directory '$dir'. Check permissions."
+            exit 1
+        }
+    elif [ ! -w "$dir" ]; then
+        echo "Error: Directory '$dir' is not writable."
+        exit 1
+    fi
+}
+
+# Function to generate wget command
+generate_wget_command() {
+    local url="$1"
+    local dir="$2"
+    echo "wget -nd -np -R \"index.html*\" -P \"$dir\" --recursive \"$url\""
+}
+
+# Parse command-line options
+DOWNLOAD_DIR="$DEFAULT_DIR"
+while getopts "d:" opt; do
+    case "$opt" in
+        d) DOWNLOAD_DIR="$OPTARG" ;;
+        *) echo "Usage: $0 [-d <directory>] [<url>]"; exit 1 ;;
+    esac
+done
+shift $((OPTIND-1))
+
+# Ensure xclip is available
+check_xclip
+
+# Handle URL
+URL="${1:-}"
+if [ -z "$URL" ]; then
+    # No URL provided, copy command to clipboard with placeholder
+    COMMAND=$(generate_wget_command "http://" "$DOWNLOAD_DIR")
+    echo "$COMMAND" | xclip -sel clip
+    echo "Wget command copied to clipboard: $COMMAND"
+    echo "Paste and replace 'http://' with the target URL."
+    exit 0
+fi
+
+# Validate and normalize URL
+if [[ ! "$URL" =~ ^https?:// ]]; then
+    URL="http://$URL"
+fi
+
+# Check download directory
+check_dir "$DOWNLOAD_DIR"
+
+# Generate and execute wget command
+COMMAND=$(generate_wget_command "$URL" "$DOWNLOAD_DIR")
+echo "Executing: $COMMAND"
+eval "$COMMAND"
+
+# Check wget exit status
+if [ $? -eq 0 ]; then
+    echo "Download completed. Files saved in '$DOWNLOAD_DIR'."
+else
+    echo "Error: wget failed. Check URL or network connectivity."
+    exit 1
+fi

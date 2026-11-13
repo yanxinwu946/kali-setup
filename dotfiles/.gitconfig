@@ -1,0 +1,25 @@
+[user]
+	email = 72176308+yanxinwu946@users.noreply.github.com
+	name = Sublarge
+[init]
+	defaultBranch = main
+[core]
+    editor = vim
+    autocrlf = input
+    excludesfile = ~/.gitignore_global
+[color]
+    ui = auto
+[log]
+    date = iso
+[help]
+    autocorrect = 1
+[url "https://github.com/"]
+    insteadOf = gh:
+[url "git@github.com:"]
+    insteadOf = ghs:
+[credential "https://github.com"]
+	helper =
+	helper = !gh auth git-credential
+[credential "https://gist.github.com"]
+	helper =
+	helper = !gh auth git-credential

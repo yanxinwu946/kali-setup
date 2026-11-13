@@ -1,0 +1,48 @@
+#!/bin/bash
+
+setup() {
+    local LIGOLO_DIR="/opt/ligolo"
+    local REPO="nicocha30/ligolo-ng"
+    
+    mkdir -p "$LIGOLO_DIR"
+    cd "$LIGOLO_DIR" || exit 1
+
+    local RAW_VERSION=$(curl -s https://api.github.com/repos/$REPO/releases/latest | grep -Po '"tag_name": "\K.*?(?=")')
+    local VERSION=${RAW_VERSION#v}
+
+    echo "[*] Downloading Ligolo-ng v$VERSION..."
+
+    curl -sSL -o proxy.tar.gz "https://github.com/$REPO/releases/download/v$VERSION/ligolo-ng_proxy_${VERSION}_linux_amd64.tar.gz"
+    curl -sSL -o agent.tar.gz "https://github.com/$REPO/releases/download/v$VERSION/ligolo-ng_agent_${VERSION}_linux_amd64.tar.gz"
+    curl -sSL -o agent.exe.zip "https://github.com/$REPO/releases/download/v$VERSION/ligolo-ng_agent_${VERSION}_windows_amd64.zip"
+
+    tar -xzf proxy.tar.gz
+    find . -maxdepth 2 -type f -name "proxy" -exec mv {} . \;
+
+    tar -xzf agent.tar.gz
+    find . -maxdepth 2 -type f -name "agent" -exec mv {} . \;
+    
+    if command -v unzip >/dev/null; then
+        unzip -qo agent.exe.zip
+        find . -maxdepth 2 -type f -name "agent.exe" -exec mv {} . \;
+    fi
+
+    # Cleanup
+    chmod +x proxy agent 2>/dev/null
+    rm -rf proxy.tar.gz agent.tar.gz agent.exe.zip ligolo-ng_* LICENSE README.md 2>/dev/null
+
+    echo "[+] Setup complete."
+}
+
+if [ "$1" == "setup" ]; then
+    setup
+    exit 0
+fi
+
+if [ ! -f /opt/ligolo/proxy ]; then
+    echo "[!] Error: /opt/ligolo/proxy not found."
+    echo "[*] Run: $0 setup"
+    exit 1
+fi
+
+cd /opt/ligolo && ./proxy -selfcert

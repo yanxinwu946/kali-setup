@@ -1,0 +1,63 @@
+# ============================================================
+# kali-setup .gitignore
+# 约定：仓库只保留自研配置、脚本、字典、载荷与工具；
+#       第三方仓库、二进制与大批量载荷按需手动获取，不入库。
+# ============================================================
+
+# 本地第三方副本（按需手动 clone，不入库）
+third_party/
+tools/src/
+tools/bin/
+dicts/fuzzDicts/
+dicts/kerberos_enum_userlists/
+dicts/n0kovo_subdomains/
+dicts/username-anarchy/
+payloads/linux/ll-privesc-kit/
+payloads/windows/sysInternals/
+payloads/windows/Sharp-Collection/
+payloads/windows/privesc/winpeas.exe
+payloads/tunnel/chisel/
+payloads/tunnel/gost/
+payloads/tunnel/ligolo/
+payloads/tunnel/stowaway/
+payloads/tunnel/socat/
+
+# 压缩包与临时文件（revshell 下小型载荷除外）
+*.tar.gz
+*.tgz
+*.zip
+*.rar
+*.7z
+*.tmp
+!payloads/revshell/**/*.zip
+!payloads/revshell/**/*.tar.gz
+
+# AI 工具 / 编辑器运行时目录
+.vscode/
+.vscode-server/
+.idea/
+.omo/
+.opencode/
+.codex/
+.claude/
+.cursor/
+.windsurf/
+.continue/
+.aider*
+.codegraph
+*.code-workspace
+
+# 日志与缓存
+*.log
+.cache/
+__pycache__/
+*.pyc
+scripts/.gdb_history
+
+# 系统杂项
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*.kate-swp
+*~

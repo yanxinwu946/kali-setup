@@ -1,0 +1,40 @@
+#!/bin/bash
+
+# 颜色定义
+greenColour="\e[0;32m\033[1m"
+redColour="\e[0;31m\033[1m"
+yellowColour="\e[0;33m\033[1m"
+endColour="\033[0m\e[0m"
+
+# 待复制到剪贴板的命令
+COPY_CMD="/usr/bin/script -qc /bin/bash /dev/null"
+
+# 动态生成 stty 设置，避免转义问题
+STTY_SIZE=$(stty size | awk '{printf "stty rows %s columns %s", $1, $2}')
+
+# 后续命令
+NEXT_CMD="^Z
+stty raw -echo; fg;
+export TERM=xterm-256color; export SHELL=/bin/bash; $STTY_SIZE; source /etc/skel/.bashrc
+export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/tmp:/snap/bin  
+alias ll='ls -lahtr --color=auto'
+"
+
+
+# 检查剪贴板工具并复制
+if command -v xclip >/dev/null 2>&1; then
+    echo "$COPY_CMD" | xclip -selection clipboard
+    echo -e "${greenColour}Command copied to clipboard (xclip):${endColour} $COPY_CMD"
+elif command -v pbcopy >/dev/null 2>&1; then
+    echo "$COPY_CMD" | pbcopy
+    echo -e "${greenColour}Command copied to clipboard (pbcopy):${endColour} $COPY_CMD"
+else
+    echo -e "${redColour}Error: No clipboard tool found (xclip or pbcopy). Please install one.${endColour}"
+    echo "Command to copy manually: $COPY_CMD"
+fi
+
+# 输出后续命令
+echo -e "${yellowColour}Next commands to execute:${endColour}"
+echo "$NEXT_CMD"
+
+exit 0

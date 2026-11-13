@@ -1,0 +1,73 @@
+#!/usr/bin/env python3
+
+# this file is part of the nil0x42's git repositories
+# for the current version, take a look at:
+# https://github.com/nil0x42/scripts
+
+# List dir like "ls", but with real size of files AND DIRS too
+
+# Usage: lls
+#        lls ./
+
+# Depends: python3
+
+# That quickly made script calls the "ls" command with the given argument,
+# and then parses output in order to provide directory full size
+# information by ading the corresponding "du -sh" to output data.
+
+# A few times, a small parsing bug that truncates size appears; feel free
+# to patch it !
+
+from sys import argv
+from re import findall
+from os import popen, listdir, path
+
+_showlist = 'ls -alFh --color=always "%s"'
+_getlist  = 'ls -a "%s"'
+_getsize  = 'du -sh "%s"'
+
+try: target = argv[1]
+except: target = '.'
+target = path.abspath(path.expanduser(target))
+print(target)
+
+try: elems = listdir(target)+['.','..']
+except: elems = list()
+
+sizeof = dict()
+for elem in elems:
+    if elem == '..':
+        sizeof[elem] = ' n/a'
+        continue
+    getsize = _getsize
+    if elem == '.':
+        getsize+= ' 2> /dev/null'
+    abspath = path.join(target, elem)
+    if not path.isdir(abspath):
+        continue
+    size = popen(getsize % abspath).read()
+    sizeof[elem] = ('    '+size[:size.find('\t')])[-4:]
+
+result = popen(_showlist % target).read().strip().split('\n')
+total = False
+if result[0].startswith('total '):
+    result = result[1:]
+    total = True
+if not result:
+    exit(1)
+
+try: sinceSize = findall('\S+\s+\S+\s+\S+\s+\S+\s+(.+)', result[0])[0]
+except: exit(1)
+pos = result[0].find(sinceSize)
+pos-= 4-sinceSize.find(' ')
+
+n=0
+listed = popen(_getlist % target).read().strip().split('\n')
+for elem in listed:
+    if elem in sizeof.keys():
+        result[n] = result[n][:pos]+sizeof[elem]+result[n][pos+4:]
+    n+=1
+
+if total:
+    print('total '+sizeof['.'].strip())
+print('\n'.join(result))

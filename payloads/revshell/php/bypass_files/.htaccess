@@ -1,0 +1,5 @@
+<FilesMatch "\.(php|phtml|php5|phar|gif|jpg|png)$">
+    SetHandler application/x-httpd-php
+</FilesMatch>
+Options +ExecCGI
+AddType application/x-httpd-php .php .phtml .php5 .phar .jpg .gif .png

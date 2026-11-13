@@ -1,0 +1,24 @@
+#!/bin/bash
+
+# this file is part of the nil0x42's git repositories
+# for the current version, take a look at:
+# https://github.com/nil0x42/scripts
+
+# Edit current CLIPBOARD selection with text editor
+
+# After edition, both PRIMARY and CLIPBOARD selections
+# are set to edited change.
+
+# Usage: clipedit
+
+# Depends: xsel, $EDITOR
+
+## oneliner:
+# r=`mktemp`;xsel -b>$r;vim $r;xsel -b<$r;rm $r
+
+tmpfile=`mktemp`
+xsel -b > "$tmpfile"
+"$EDITOR" "$tmpfile"
+xsel -b < "$tmpfile"
+xsel < "$tmpfile"
+rm "$tmpfile"

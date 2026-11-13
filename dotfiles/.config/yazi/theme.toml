@@ -1,0 +1,89 @@
+# ============================================================
+# yazi 主题（下发到 ~/.config/yazi/theme.toml）
+# Catppuccin Mocha，与 kitty / btop 配色一致
+# 省略项使用 yazi 内置默认值
+# ============================================================
+
+[flavor]
+dark  = ""
+light = ""
+
+[mgr]
+cwd            = { fg = "#89b4fa" }
+find_keyword   = { fg = "#f9e2af", bold = true, underline = true }
+find_position  = { fg = "#f5c2e7", bold = true }
+border_style   = { fg = "#585b70" }
+marker_copied  = { fg = "#a6e3a1", bg = "#a6e3a1" }
+marker_cut     = { fg = "#f38ba8", bg = "#f38ba8" }
+marker_marked  = { fg = "#89dceb", bg = "#89dceb" }
+marker_selected = { fg = "#f9e2af", bg = "#f9e2af" }
+
+[tabs]
+active   = { fg = "#1e1e2e", bg = "#89b4fa", bold = true }
+inactive = { fg = "#89b4fa", bg = "#45475a" }
+
+[mode]
+normal_main = { fg = "#1e1e2e", bg = "#89b4fa", bold = true }
+normal_alt  = { fg = "#89b4fa", bg = "#45475a" }
+select_main = { fg = "#1e1e2e", bg = "#f38ba8", bold = true }
+select_alt  = { fg = "#f38ba8", bg = "#45475a" }
+unset_main  = { fg = "#1e1e2e", bg = "#f38ba8", bold = true }
+unset_alt   = { fg = "#f38ba8", bg = "#45475a" }
+
+[status]
+overall         = { fg = "#cdd6f4", bg = "#313244" }
+perm_sep        = { fg = "#6c7086" }
+perm_type       = { fg = "#a6e3a1" }
+perm_read       = { fg = "#f9e2af" }
+perm_write      = { fg = "#f38ba8" }
+perm_exec       = { fg = "#89dceb" }
+progress_label  = { fg = "#cdd6f4", bold = true }
+progress_normal = { fg = "#a6e3a1", bg = "#313244" }
+progress_error  = { fg = "#f9e2af", bg = "#f38ba8" }
+
+[which]
+border          = { fg = "#89b4fa" }
+cand            = { fg = "#89dceb" }
+rest            = { fg = "#7f849c" }
+desc            = { fg = "#f5c2e7" }
+separator_style = { fg = "#6c7086" }
+
+[confirm]
+border = { fg = "#89b4fa" }
+title  = { fg = "#89b4fa" }
+
+[pick]
+border = { fg = "#89b4fa" }
+active = { fg = "#f5c2e7", bold = true }
+
+[input]
+border = { fg = "#89b4fa" }
+
+[cmp]
+border = { fg = "#89b4fa" }
+
+[tasks]
+border = { fg = "#89b4fa" }
+
+[help]
+border = { fg = "#89b4fa" }
+chord  = { fg = "#94e2d5" }
+
+[notify]
+title_info  = { fg = "#a6e3a1" }
+title_warn  = { fg = "#f9e2af" }
+title_error = { fg = "#f38ba8" }
+
+[filetype]
+rules = [
+  { mime = "**/image/*", fg = "#f9e2af" },
+  { mime = "**/{audio,video}/*", fg = "#f5c2e7" },
+  { mime = "**/application/{zip,rar,7z*,tar,gzip,xz,zstd,bzip*,lzma,compress,archive,cpio,arj,xar,ms-cab*}", fg = "#f38ba8" },
+  { mime = "**/application/{pdf,doc,rtf}", fg = "#94e2d5" },
+  { mime = "vfs/{absent,stale}", fg = "#7f849c" },
+  { url = "*", is = "orphan", bg = "#f38ba8" },
+  { url = "*", is = "exec", fg = "#a6e3a1" },
+  { url = "*", is = "dummy", bg = "#f38ba8" },
+  { url = "*/", is = "dummy", bg = "#f38ba8" },
+  { url = "*/", fg = "#89b4fa" }
+]

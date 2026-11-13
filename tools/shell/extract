@@ -1,0 +1,17 @@
+#!/bin/bash
+# 自动识别并清洗不同格式的键值对，输出 Value
+
+if [ -z "$1" ]; then
+    echo "Usage: $0 <file>"
+    exit 1
+fi
+
+if [ ! -f "$1" ]; then
+    echo "[!] Error: File not found."
+    exit 1
+fi
+
+sed -E 's/^[^:= ]+[:=][ ]*//;             # 移除 key 和分隔符
+        s/^["'\'']//;                      # 移除开头的引号
+        s/["'\''][,;]?$//;                 # 移除结尾的引号及符号
+        s/[,;]$//' "$1" | sed '/^$/d'       # 移除结尾符号并删除空行

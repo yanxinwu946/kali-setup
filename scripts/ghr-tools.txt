@@ -1,0 +1,13 @@
+# GitHub 工具清单（ghr install 参数）
+# 每行一个：owner/repo 或 owner/repo@tag；# 开头为注释
+# ghr 会按当前平台自动选择资产并校验
+# 部分工具会选中 musl 构建，install.sh deps 已安装 musl loader
+
+cli/cli
+Schniz/fnm
+sxyazi/yazi
+zellij-org/zellij
+projectdiscovery/nuclei
+projectdiscovery/subfinder
+projectdiscovery/httpx
+projectdiscovery/naabu
