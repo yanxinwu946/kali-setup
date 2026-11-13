@@ -129,10 +129,10 @@ do_deps() {
         log_info "系统依赖已齐全"
     fi
 
-    # Kali 的 bloodyad 包未把命令链接到 PATH
-    if [[ -x /usr/share/bloodyad/bin/bloodyAD ]]; then
+    # Kali 包只提供小写 bloodyad；补一个上游习惯的大写别名
+    if [[ -x /usr/share/bloodyad/bin/bloodyAD ]] \
+       && ! command -v bloodyAD >/dev/null 2>&1; then
         ln -sf /usr/share/bloodyad/bin/bloodyAD /usr/local/bin/bloodyAD
-        ln -sf /usr/share/bloodyad/bin/bloodyad /usr/local/bin/bloodyad
     fi
 }
 
