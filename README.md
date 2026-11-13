@@ -34,7 +34,26 @@ source ~/.zshrc
 - 默认 `HOME=/root`，`dotfiles/` 下发到 `/root`
 - 会写入 `/usr/local/bin`、`/usr/local/share/zsh/site-functions`、`/etc/apt`、`/etc/ssh` 等系统位置
 - ghr / fnm / uv 工具安装在 `/root/.local/bin`、`/root/.local/share`
+- JDK 8u202 安装在 `/opt/jdk8`（软链到 `/opt/jdk1.8.0_202`）
 - 非 root 用户需自行调整路径与权限，不保证开箱即用
+
+## 环境基线
+
+本仓库是 Kali 之上的增量配置，默认假定已安装 `kali-linux-default` 或
+`kali-linux-headless`。最小化系统先执行：
+
+```bash
+sudo apt install kali-linux-headless
+```
+
+| 层 | 内容 |
+| --- | --- |
+| Kali 基础 | nmap / metasploit / sqlmap / hashcat / hydra / wireshark 等 |
+| apt 增量 | certipy-ad、mitm6、arjun、enum4linux-ng 等 |
+| ghr | gh、fnm、yazi、zellij、ProjectDiscovery 工具（nuclei/subfinder/httpx/naabu/dnsx/katana） |
+| uv | dirsearch、evil-winrm-py、ghauri、fenjing、pipx4adtools 等 |
+| payloads | chisel/gost/ligolo/stowaway/socat/winPEAS |
+| 可选 | BloodHound/Neo4j、云工具、取证、无线等按需安装 |
 
 ## 目录结构
 
@@ -56,7 +75,7 @@ source ~/.zshrc
 `install.sh` 默认会执行以下流程（需 root）：
 
 1. 切换 Kali apt 镜像源（默认清华 TUNA，可 `--skip mirror` 跳过）
-2. 安装系统依赖与常用 CLI（htop/btop/rustscan/ncdu/zoxide/yq/shellcheck/lazygit/httpie 等，只装缺失项）
+2. 安装系统依赖、常用 CLI 与 AD/Web 补充（certipy-ad/mitm6/arjun/enum4linux-ng 等，只装缺失项）
 3. 通过 **ghr** 安装 GitHub 工具：`gh`、`yazi`、`zellij`、ProjectDiscovery 全家桶（清单见 `scripts/ghr-tools.txt`）
 4. 通过 **ghr** 下载后渗透载荷：chisel/gost/ligolo/stowaway/socat/winPEAS（清单见 `scripts/ghr-payloads.txt`）
 5. 将系统语言切换为简体中文；终端输出由 `.zshenv` 固定为英文
@@ -64,10 +83,11 @@ source ~/.zshrc
 7. 依次执行 `scripts/` 下初始化脚本（OMZ / zellij / gdb）
 8. 将 pentest 环境注入 `~/.zshrc`（必须在 oh-my-zsh 之后，否则会被覆盖）
 9. 安装 **fnm** 并设置 Node.js LTS（下载走 npmmirror）
-10. 通过 `uv` 安装常用 Python 工具
-11. 安装 **JetBrains Maple Mono Nerd Font**（已安装则跳过）
-12. 开启 root SSH 登录（写入 `sshd_config.d` drop-in，自动校验/回滚）
-13. 整理脚本执行权限
+10. 安装 **JDK 8u202** 到 `/opt/jdk8`（Huawei 镜像，sha256 校验）
+11. 通过 `uv` 安装常用 Python 工具
+12. 安装 **JetBrains Maple Mono Nerd Font**（已安装则跳过）
+13. 开启 root SSH 登录（写入 `sshd_config.d` drop-in，自动校验/回滚）
+14. 整理脚本执行权限
 
 > **终端语言**：系统与图形界面保持简体中文；`~/.zshenv` 将
 > `LANG/LANGUAGE/LC_ALL` 固定为 `en_US.UTF-8`，对所有 zsh 调用生效
@@ -79,7 +99,7 @@ source ~/.zshrc
 ### 安装选项
 
 ```bash
-./install.sh --skip gh-tools,payloads,fonts # 快速恢复：跳过下载类步骤
+./install.sh --skip gh-tools,payloads,jdk8,fonts # 快速恢复：跳过下载类步骤
 ./install.sh --skip mirror,locale         # 保留官方源和英文环境
 ./install.sh --skip node                  # 不安装 fnm / Node.js
 ./install.sh --only fonts,ssh             # 只补装字体、开启 root SSH
@@ -88,7 +108,7 @@ source ~/.zshrc
 ./install.sh --help                       # 查看全部步骤与参数
 ```
 
-步骤名：`mirror,deps,gh-tools,payloads,locale,dotfiles,init,zshrc,node,uv,fonts,ssh,perms`。
+步骤名：`mirror,deps,gh-tools,payloads,locale,dotfiles,init,zshrc,node,jdk8,uv,fonts,ssh,perms`。
 
 > **安全提示**：`--ssh-root yes`（默认）允许 root 密码登录，仅建议在授权测试环境或内网使用。
 > 暴露公网的主机建议使用 `--ssh-root prohibit-password`，并提前配置 root 的
@@ -104,7 +124,7 @@ source ~/.zshrc
 | Go | 官方工具链自带 `go`，无需版本管理器 |
 | Rust | rustup/自带工具链 |
 | Python | `uv`（项目与工具） |
-| Java | IDEA 管理 JDK；系统安装一个常用 JDK 即可 |
+| Java | IDEA 管理 JDK；`install-jdk8.sh` 提供 `/opt/jdk8` 供老工具使用 |
 | Node.js | `fnm`（`--use-on-cd` 按 `.node-version` / `.nvmrc` / `package.json` 自动切换） |
 | Ruby | 系统版本（Metasploit 依赖） |
 
@@ -113,6 +133,8 @@ source ~/.zshrc
 fnm list                    # 已安装版本
 fnm default lts-latest      # 设置全局默认
 fnm use 22                  # 当前 shell 临时切换
+
+./scripts/install-jdk8.sh   # JDK 8u202 -> /opt/jdk8（不影响系统默认 Java）
 ```
 
 Node 下载默认走 npmmirror（`FNM_NODE_DIST_MIRROR`）。Python 工具仍由
@@ -143,6 +165,8 @@ projectdiscovery/nuclei
 projectdiscovery/subfinder
 projectdiscovery/httpx
 projectdiscovery/naabu
+projectdiscovery/dnsx
+projectdiscovery/katana
 ```
 
 ```bash
@@ -195,6 +219,7 @@ cd ~/pentest
 ./scripts/install-gh-tools.sh         # 通过 ghr 安装/更新 GitHub 工具（--force 更新全部）
 ./scripts/install-payloads.sh         # 通过 ghr 下载后渗透载荷（--force 更新全部）
 ./scripts/install-fnm.sh              # 安装 fnm 并设置 Node.js LTS
+./scripts/install-jdk8.sh             # 安装 JDK 8u202 到 /opt/jdk8（--force 重装）
 ./scripts/install-uv-tools.sh         # 单独安装/更新 uv Python 工具
 ./scripts/install-fonts.sh            # 安装字体并写入 qterminal 字体（--force 强制重装）
 ./scripts/setup-ssh.sh                # 单独配置 root SSH（--root-login yes|prohibit-password|no）

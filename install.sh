@@ -9,9 +9,9 @@
 #   --ssh-root <mode>   root SSH 模式: yes|prohibit-password|no（默认 yes）
 #   -h, --help          显示帮助
 #
-# 步骤: mirror,deps,gh-tools,payloads,locale,dotfiles,init,zshrc,node,uv,fonts,ssh,perms
+# 步骤: mirror,deps,gh-tools,payloads,locale,dotfiles,init,zshrc,node,jdk8,uv,fonts,ssh,perms
 # 示例:
-#   ./install.sh --skip gh-tools,payloads,fonts  # 快速恢复，跳过下载类步骤
+#   ./install.sh --skip gh-tools,payloads,jdk8,fonts  # 快速恢复，跳过下载类步骤
 #   ./install.sh --only fonts,ssh        # 只补装字体、开启 root SSH
 # ============================================================
 set -uo pipefail
@@ -23,7 +23,7 @@ export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
 # shellcheck source=scripts/_common.sh
 source "$PENTEST_DIR/scripts/_common.sh"
 
-STEPS=(mirror deps gh-tools payloads locale dotfiles init zshrc node uv fonts ssh perms)
+STEPS=(mirror deps gh-tools payloads locale dotfiles init zshrc node jdk8 uv fonts ssh perms)
 STEP_NAMES="$(IFS=,; echo "${STEPS[*]}")"
 SKIP_LIST=","; ONLY_LIST=""
 FORCE_FONTS=0
@@ -99,30 +99,41 @@ do_deps() {
         htop btop ncdu tree zip unzip aria2 rustscan musl
         zoxide yq shellcheck lazygit httpie
         libsasl2-dev python3-dev libldap2-dev libssl-dev
-        ntpsec-ntpdate rlwrap bloodyad faketime python3-pwntools
+        ntpsec-ntpdate rlwrap bloodyad certipy-ad mitm6 arjun enum4linux-ng
+        faketime python3-pwntools
         trash-cli goshs fontconfig fonts-noto-cjk
     )
     local -a missing=() failed=()
     local p
 
+    if ! pkg_installed kali-linux-default && ! pkg_installed kali-linux-headless; then
+        log_warn "未检测到 kali-linux-default/headless；建议先安装 Kali 基础工具集"
+    fi
+
     for p in "${pkgs[@]}"; do
         pkg_installed "$p" || missing+=("$p")
     done
-    if ((${#missing[@]} == 0)); then
+
+    if ((${#missing[@]})); then
+        log_info "需安装 ${#missing[@]} 个依赖: ${missing[*]}"
+        apt-get update -qq || log_warn "apt-get update 失败，继续尝试安装"
+        if ! DEBIAN_FRONTEND=noninteractive apt-get install -y -qq "${missing[@]}"; then
+            log_warn "批量安装失败，改为逐个安装..."
+            for p in "${missing[@]}"; do
+                DEBIAN_FRONTEND=noninteractive apt-get install -y -qq "$p" \
+                    || failed+=("$p")
+            done
+        fi
+        ((${#failed[@]} == 0)) || { log_warn "安装失败: ${failed[*]}"; return 1; }
+    else
         log_info "系统依赖已齐全"
-        return 0
     fi
 
-    log_info "需安装 ${#missing[@]} 个依赖: ${missing[*]}"
-    apt-get update -qq || log_warn "apt-get update 失败，继续尝试安装"
-    if ! DEBIAN_FRONTEND=noninteractive apt-get install -y -qq "${missing[@]}"; then
-        log_warn "批量安装失败，改为逐个安装..."
-        for p in "${missing[@]}"; do
-            DEBIAN_FRONTEND=noninteractive apt-get install -y -qq "$p" \
-                || failed+=("$p")
-        done
+    # Kali 的 bloodyad 包未把命令链接到 PATH
+    if [[ -x /usr/share/bloodyad/bin/bloodyAD ]]; then
+        ln -sf /usr/share/bloodyad/bin/bloodyAD /usr/local/bin/bloodyAD
+        ln -sf /usr/share/bloodyad/bin/bloodyad /usr/local/bin/bloodyad
     fi
-    ((${#failed[@]} == 0)) || { log_warn "安装失败: ${failed[*]}"; return 1; }
 }
 
 do_dotfiles() {
@@ -182,6 +193,10 @@ do_zshrc() {
 
 do_node() {
     bash "$PENTEST_DIR/scripts/install-fnm.sh"
+}
+
+do_jdk8() {
+    bash "$PENTEST_DIR/scripts/install-jdk8.sh"
 }
 
 do_uv() {

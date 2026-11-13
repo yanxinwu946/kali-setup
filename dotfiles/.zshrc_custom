@@ -25,6 +25,7 @@ fi
 # ==================== 环境 ====================
 export GO111MODULE=on GOPATH=$HOME/go GOBIN=$GOPATH/bin
 export GOPROXY=https://goproxy.cn,https://mirrors.aliyun.com/goproxy/,direct
+export JAVA8_HOME=/opt/jdk8
 export PYTHON_BUILD_MIRROR_URL="https://mirrors.aliyun.com/python"
 export PYTHONWARNINGS="ignore::DeprecationWarning,ignore::SyntaxWarning,ignore::UserWarning"
 

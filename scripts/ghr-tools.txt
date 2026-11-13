@@ -11,3 +11,5 @@ projectdiscovery/nuclei
 projectdiscovery/subfinder
 projectdiscovery/httpx
 projectdiscovery/naabu
+projectdiscovery/dnsx
+projectdiscovery/katana
