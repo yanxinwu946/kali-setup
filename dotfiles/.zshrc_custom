@@ -97,5 +97,4 @@ filter() { print -l "php://filter/convert.base64-encode/resource=../../../etc/pa
 bindkey '^Xe' edit-command-line
 unalias gf gau 2>/dev/null
 # 语言由系统 locale 决定（scripts/setup-locale-zh.sh 可切换为中文）
-source /usr/share/doc/fzf/examples/completion.zsh
-source /usr/share/doc/fzf/examples/key-bindings.zsh
+# fzf 由 .zshrc 中的 `source <(fzf --zsh)` 初始化，避免重复加载
